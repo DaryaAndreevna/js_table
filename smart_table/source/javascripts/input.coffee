@@ -16,5 +16,5 @@ class window.Input
     tmp
     
   clearRecord: =>
-    fields = for tag, field in @fields
+    for tag, field of @fields
       field.value = ''

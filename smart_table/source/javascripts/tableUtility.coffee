@@ -7,11 +7,24 @@ window.onload = ->
     {id:2,name:"Dasha",age:21, adult:true}
   ]
 
-  table = new Table "mytable"
-  table.buildFromJson(json)
-  console.log(Input)
+  tableNode = document.getElementById("smartTable")
+  searchNode = document.createElement("input")
+  searchNode.setAttribute("id", "Search")
 
-  
+  inputsNode = document.createElement("div")
+  inputsNode.setAttribute("id", "Input")
+
+  submitNode = document.createElement("button")
+  submitNode.setAttribute("id", "Submit")
+  submitNode.innerHTML = "Add"
+
+  tableParent = tableNode.parentNode
+  tableParent.insertBefore(searchNode, tableNode)
+  tableParent.appendChild(inputsNode)
+  tableParent.appendChild(submitNode)
+
+  table = new Table "smartTable"
+  table.buildFromJson(json)
 
   go = document.getElementById('Search')
   go.oninput = table.search
