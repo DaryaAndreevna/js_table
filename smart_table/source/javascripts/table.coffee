@@ -1,18 +1,17 @@
 class window.Table
   constructor: (tableTag) ->
-    @table = document.createElement('table')
+    @table = document.getElementById(tableTag)
     @thead = document.createElement('thead')
     @tbody = document.createElement('tbody')
 
     @rows = @tbody.children
-    @columns = {}
     @header = []
+    @records = {}
     @input
 
     @table.border = 1
     @table.appendChild(@thead)
     @table.appendChild(@tbody)
-    document.getElementById(tableTag).appendChild(@table)
 
   createTableRowContent: (rowObject, data, cellType) ->
     rowContent = document.createElement(cellType)
@@ -30,11 +29,11 @@ class window.Table
     if @header.length == 0
       @header = Object.keys(jsonString[0])
       @buildHeaderFromJson()
-  
     for i in [0...jsonString.length]
       row = document.createElement('tr')
       for key,value of jsonString[i]
-        @createTableData(row, value) 
+        @createTableData(row, value)
+      @records[row.innerHTML] = jsonString[i]
       @tbody.appendChild(row)
 
   buildHeaderFromJson: =>
@@ -52,58 +51,48 @@ class window.Table
 
   sort: (c) =>
     column = c.target
-    reverse = column.getAttribute('reverse')
     tag = column.innerHTML
-    @getColumns()
+    reverse = column.getAttribute('reverse')
 
-    records = []
     columForSort = []
 
-    for cell in [0...@rows.length]
-      records[cell] = @getRecord(cell)
-      columForSort[cell] = @columns[tag][cell].innerHTML
-
+    for tr, json of @records
+      columForSort.push(value) for key, value of json when key is tag
+      
     if reverse is "true"
-      columForSort = columForSort.sort((a,b) =>  @compareCells(b,a))
+      columForSort = columForSort.sort(@compareCells)
+      columForSort.reverse()
       column.setAttribute('reverse', false)
-    else 
-      columForSort = columForSort.sort((a,b) => @compareCells(a,b))
+    else
+      columForSort = columForSort.sort(@compareCells)
       column.setAttribute('reverse', true)
 
     numberOfUniqRecords = 1
     for j in [0...columForSort.length] by numberOfUniqRecords
-      record = @findInRecords(columForSort[j], records, tag)
+      record = @findInRecords(columForSort[j], tag)
       for m in [0...record.length]
-        for i in [0...@header.length]
-          @rows[j+m].cells[i].innerHTML = record[m][@header[i]]
+        @rows[j+m].innerHTML = record[m]
       if record.length > 1
         numberOfUniqRecords = record.length
 
-  findInRecords: (value, records, tag) ->
+  findInRecords: (valueFromSort, tag) ->
     result = []
-    result.push(row) for row in records when row[tag] is value
+    for tr, json of @records
+       for key, value of json when key is tag and value is valueFromSort
+          result.push(tr) 
     result
 
   compareCells: (a,b)  ->
-    if @IsNumeric(a) and @IsNumeric(b)
+    if typeof(a) == "number" or typeof(b) == "number"
       parseInt(a) > parseInt(b)
     else
-      a.localeCompare(b)
-
-  IsNumeric: (n) ->
-    result = on if isNaN(parseFloat(n)) isnt off and isFinite(n)
+      String(a).localeCompare(String(b))
 
   getRecord: (row) ->
     record = {}
     for i in [0...@header.length]
       record[@header[i]] = @rows[row].cells[i].innerHTML
     record
-
-  getColumns: ->
-    for i in [0...@header.length]
-      @columns[@header[i]] = []
-      for j in [0...@rows.length]
-        @columns[@header[i]].push(@rows[j].children[i])
 
   addRow: =>
     record = @input.getRecord()
@@ -120,7 +109,7 @@ class window.Table
       cells = row.children
       for cell in cells
         str = cell.innerHTML
-        if  str.contains(input) is yes
+        if  str.indexOf(input) >= 0
           row.style.display = ''
           break
         row.style.display = 'none'
